@@ -1,0 +1,478 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[margin=1.1in]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\DeclareMathOperator{\val}{v}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\ZZ}{\mathcal{O}}   % 2-integral rationals
+\newcommand{\vv}{\val_2}
+
+\title{The recurrence of OEIS A276175 takes only integer values}
+\author{}
+\date{July 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Let $a_0=a_1=a_2=a_3=1$ and
+$a_n=(a_{n-1}+1)(a_{n-2}+1)(a_{n-3}+1)/a_{n-4}$ for $n\ge4$. We prove that
+every $a_n$ is an integer, settling a conjecture of B.~Langlois (2016, OEIS
+A276175). For odd primes a short valuation induction shows that divisibility
+is confined to bursts of three consecutive terms. At the prime $2$ we prove
+that $\vv(a_n)$ follows an explicit word of period $44$; the proof is a
+computer-assisted induction on eleven-step segments of the orbit, in which the
+deviation of each period from the initial one is confined to an explicit
+$\Z_2$-lattice tube, and the finitely many required $2$-adic estimates are
+established by certified polynomial (jet) approximations of the segment maps.
+Neither of the standard integrality mechanisms applies: the Laurent phenomenon
+fails for this recurrence, and the map has positive algebraic entropy. The
+complete proof, including every certified estimate, has been formally verified.
+\end{abstract}
+
+\section{Introduction}
+
+The sequence
+\[
+1,\;1,\;1,\;1,\;8,\;36,\;666,\;222111,\;685187756,\;\dots
+\]
+defined by $a_0=a_1=a_2=a_3=1$ and
+\begin{equation}\label{eq:rec}
+a_n\,a_{n-4}\;=\;b_{n-1}\,b_{n-2}\,b_{n-3},\qquad b_m:=a_m+1,
+\end{equation}
+is OEIS \texttt{A276175} \cite{oeis} (B.~Langlois, 2016). The entry records the conjecture
+that all terms are integers (also asked on Math.StackExchange \cite{mse}),
+previously checked for $n\le 40$. Our main result is:
+
+\begin{theorem}\label{thm:main}
+$a_n\in\Z$ for all $n\ge 0$.
+\end{theorem}
+
+All $a_n$ are well defined and positive (both sides of \eqref{eq:rec} stay
+positive), so $a_n\in\Q_{>0}$. Two remarks explain why the question is not
+routine. First, the Laurent phenomenon fails: for generic initial values
+$(x_0,\dots,x_3)$ the term $a_8$ has a genuine pole along $x_1+1=0$ (at
+$(1,-1,1,1)$ one gets $a_4=0$ and $a_8=\infty$), so integrality is not an
+instance of cluster-algebra Laurentness \cite{FZ} --- it is special to the
+all-ones orbit. Second, the map is not integrable: the degrees $d_n$ of $a_n$
+as rational functions of generic initial data satisfy
+$d_n=d_{n-1}+d_{n-2}+d_{n-3}-d_{n-4}$ for $n\ge 9$, so the algebraic entropy
+$\log\lambda$ is positive, $\lambda\approx1.72208$ being the largest root of
+$x^4-x^3-x^2-x+1$; there are no conserved quantities to exploit. The
+recurrence belongs to the coprimeness-preserving but non-integrable class
+studied by Kamiya--Kanki--Mase--Tokihiro \cite{kanki}.
+
+The proof splits by prime. Section~\ref{sec:odd} treats all odd primes at
+once by an elementary induction (Theorem~\ref{thm:odd}). Section~\ref{sec:red}
+reduces the remaining $2$-adic statement to a periodicity assertion, the Word
+Theorem (Theorem~\ref{thm:word}). Sections~\ref{sec:proofword}
+and~\ref{sec:cert} prove the Word Theorem: an induction over $11$-step
+segments of the orbit whose hypotheses are finitely many exact $2$-adic
+estimates, established by certified computation. Section~\ref{sec:final}
+records the formal verification.
+
+Throughout, $\vv$ and $\val_q$ denote the $2$-adic and $q$-adic valuations
+on $\Q^\times$, and
+\[
+\ZZ \;:=\; \{x\in\Q:\ \vv(x)\ge 0\}
+\]
+is the ring of $2$-integral rationals ($\Z$ localized away from odd primes).
+
+\section{Odd primes: burst confinement}\label{sec:odd}
+
+\begin{theorem}\label{thm:odd}
+For every odd prime $q$ and every $n\ge0$, $\ \val_q(a_n)\ge0$.
+\end{theorem}
+
+The proof uses only the identity obtained from \eqref{eq:rec} by adding
+$a_{n-4}$ to both sides:
+\begin{equation}\label{eq:star}
+b_n\,a_{n-4}\;=\;a_{n-4}+b_{n-1}b_{n-2}b_{n-3}\qquad(n\ge4).
+\end{equation}
+
+Fix an odd prime $q$ and write $\val:=\val_q$. Define
+\[
+t_n:=\val(b_n)\ \ (0\le n\le 3),\qquad t_n:=\val(b_n)-t_{n-4}\ \ (n\ge4),
+\]
+so $t_0=t_1=t_2=t_3=\val(2)=0$.
+
+\begin{lemma}\label{lem:burst}
+For all $n\ge4$:
+\emph{(I)} $t_n\ge0$;\quad
+\emph{(II)} $\val(a_n)=t_{n-1}+t_{n-2}+t_{n-3}$;\quad
+\emph{(III)} if $t_n>0$ then $t_{n-1}=t_{n-2}=t_{n-3}=0$.
+\end{lemma}
+
+\begin{proof}
+Strong induction on $n$. For $4\le n\le7$ one has $t_{n-4}=0$, so
+$t_n=\val(b_n)\ge 0$, and (II), (III) are read off from
+$a_4=8$, $a_5=36$, $a_6=666$, $a_7=222111$ and
+$b_4=3^2$, $b_5=37$, $b_6=23\cdot29$, $b_7=2^5\cdot11\cdot631$.
+Let $n\ge8$ and assume (I)--(III) below $n$.
+
+\emph{(II).} By \eqref{eq:rec} and the definition of $t$,
+\[
+\val(a_n)=\sum_{i=1}^{3}\val(b_{n-i})-\val(a_{n-4})
+=\sum_{i=1}^{3}(t_{n-i}+t_{n-i-4})-(t_{n-5}+t_{n-6}+t_{n-7})
+=t_{n-1}+t_{n-2}+t_{n-3},
+\]
+using (II) at $n-4$; the sum telescopes and no inequality is needed.
+
+\emph{(I).} We must show $\val(b_n)\ge t_{n-4}$. If $t_{n-4}=0$ this holds
+because $\val(b_n)=\val(1+a_n)\ge\min(0,\val(a_n))\ge0$ by (I), (II) below
+$n$. So assume $T:=t_{n-4}>0$. By (III) at $n-4$ we get
+$t_{n-5}=t_{n-6}=t_{n-7}=0$, hence $\val(a_{n-4})=0$ by (II); and for
+$i=1,2,3$ the sum in (II) for $\val(a_{n-i})$ contains the term $t_{n-4}$,
+so $\val(a_{n-i})\ge T$, i.e.\ $b_{n-i}\equiv1\pmod{q^{T}}$. Then
+\eqref{eq:star} gives
+\[
+b_n\,a_{n-4}\;\equiv\;a_{n-4}+1\;=\;b_{n-4}\pmod{q^{T}},
+\]
+and $\val(b_{n-4})=t_{n-4}+t_{n-8}\ge T$, so $\val(b_na_{n-4})\ge T$; since
+$\val(a_{n-4})=0$, this yields $\val(b_n)\ge T$.
+
+\emph{(III).} If $t_n>0$ then $\val(b_n)>0$, so $a_n\equiv-1\pmod q$ and
+$\val(a_n)=0$; by (II) and (I), $t_{n-1}=t_{n-2}=t_{n-3}=0$.
+\end{proof}
+
+Theorem~\ref{thm:odd} follows from Lemma~\ref{lem:burst}(I)--(II). Divisibility by an odd prime
+is thus confined to \emph{bursts}: a positive $t_n$ forces the three
+preceding $t$'s to vanish, and $\val_q(a_n)$ is always the sum of the three
+preceding $t$'s. This is the valuation shadow of the confined singularity
+pattern of the map.
+
+\section{Reduction to the Word Theorem}\label{sec:red}
+
+By Theorem~\ref{thm:odd}, Theorem~\ref{thm:main} is equivalent to
+$\alpha_n:=\vv(a_n)\ge0$ for all $n$. Let $\beta_n:=\vv(b_n)$; by
+\eqref{eq:rec},
+\begin{equation}\label{eq:alpharec}
+\alpha_n=\beta_{n-1}+\beta_{n-2}+\beta_{n-3}-\alpha_{n-4}.
+\end{equation}
+
+\begin{theorem}[Word Theorem]\label{thm:word}
+For all $n\ge4$, $\ \alpha_n=w\bigl((n-4)\bmod 44\bigr)$, where $w$ is the word
+\[
+3,2,1,0,2,3,4,0,0,0,0,\ \ 3,2,1,0,2,3,4,0,0,0,0,\ \
+4,3,2,0,1,2,3,0,0,0,0,\ \ 4,3,2,0,1,2,3,0,0,0,0 .
+\]
+\end{theorem}
+
+Every letter of $w$ is nonnegative, so Theorem~\ref{thm:word} implies
+Theorem~\ref{thm:main}. (The proof also establishes the accompanying
+period-$44$ word for $\beta_n$, namely
+$0,0,0,5,0,0,0,2,1,1,1,$ $0,0,0,5,0,0,0,2,1,1,2,$
+$0,0,0,5,0,0,0,1,1,1,2,$ $0,0,0,5,0,0,0,1,1,1,1$; consistency:
+$\sum w=\frac32\sum\beta$ over a period, forced by \eqref{eq:alpharec}. The
+block structure $PP\bar P\bar P$ of $w$ reflects the palindrome symmetry
+$a_{3-n}=a_n$ of the doubly infinite orbit.)
+
+The base of the induction is a finite computation:
+
+\begin{proposition}\label{prop:base}
+Theorem~\ref{thm:word} holds for $4\le n\le 69$. Moreover, for these $n$,
+writing $a_n=2^{\alpha_n}u_n$ with $u_n$ a $2$-adic unit, the residues
+$u_n\bmod 2^{K_n}$ are known exactly for precisions $K_n\ge 558$.
+\end{proposition}
+
+\begin{proof}[Method]
+Exact rational arithmetic verifies the word for $n\le 28$. Beyond that one
+computes in $\Q_2$ with explicit precision tracking: values are stored as
+$2^{v}u$ with $u$ known modulo $2^{\pi}$; multiplication and division cost no
+relative precision, while adding $1$ at a $\beta$-event costs exactly $\beta$
+bits. Starting from $600$ bits at the seed, the run to $n=69$ retains
+$\ge558$ bits, far above the $\le6$ bits needed to certify each event.
+(The same computation extends to $n=30{,}000$ with $4{,}900$ bits retained,
+which is how the word was found; only $n\le69$ is used below.)
+\end{proof}
+
+\section{Proof of the Word Theorem}\label{sec:proofword}
+
+\subsection*{Windows, tubes, and the segment maps}
+
+Fix the four \emph{boundaries} $B_i=22+11i$, $i=0,1,2,3$, so that
+$B_3+11=B_0+44$. All indices $22\le n\le 69$ carry certified unit residues by
+Proposition~\ref{prop:base}; note $\alpha_{B_i+j}=0$ for $j=0,\dots,3$, so the
+window values $a_{B_i+j}$ are $2$-adic units times $1$.
+
+For each $i$ the certificate specifies an explicit matrix
+$G_i\in M_4(\Q)\cap M_4(\ZZ)$ (its \emph{tube generators}; every entry is an
+odd integer times a power of $2$, every nonzero entry of every column having
+$\vv\ge3$), which is invertible with \emph{dyadic} inverse: the matrix
+$H_i:=G_i^{-1}$ has entries in $\Z[\tfrac12]$ with $\vv\ge-5$. The
+\emph{tube} at boundary $i$ is the $\ZZ$-span of the rows of $G_i$,
+\[
+V_i:=\Bigl\{\xi\in\ZZ^4:\ \xi_j=\sum_{a=0}^{3}c_a\,(G_i)_{aj}
+\text{ for some }c\in\ZZ^4\Bigr\}
+=\Bigl\{\xi:\ \textstyle\sum_j (H_i)_{aj}\,\xi_j\in\ZZ\ \ (a=0,\dots,3)\Bigr\},
+\]
+a sub-$\ZZ$-module of $2^3\ZZ^4$. (The second description follows from
+$H_i=G_i^{-1}$ and is how membership is read off; the two-sidedness of the
+inverse is a finite rational identity.)
+
+For $c\in\ZZ^4$ define the \emph{perturbed segment orbit} at boundary $i$:
+\[
+F^{(i,c)}_j:=a_{B_i+j}\Bigl(1+\sum_a c_a (G_i)_{aj}\Bigr)\ \ (j=0,\dots,3),
+\qquad
+F^{(i,c)}_{m}:=\frac{(F^{(i,c)}_{m-1}+1)(F^{(i,c)}_{m-2}+1)(F^{(i,c)}_{m-3}+1)}
+{F^{(i,c)}_{m-4}}\ \ (m\ge4).
+\]
+Thus $F^{(i,0)}_m=a_{B_i+m}$, and if the actual window at $B_i+44k$ is a
+perturbation of the base window with deviation in $V_i$ --- that is,
+$a_{B_i+44k+j}=F^{(i,c)}_j$ for some $c\in\ZZ^4$ --- then
+$F^{(i,c)}_m=a_{B_i+44k+m}$ for \emph{all} $m$, since both sides satisfy the
+same recurrence from the same four initial values.
+
+The computational core of the proof is the following statement, one instance
+per boundary.
+
+\begin{lemma}[Segment Lemma]\label{lem:seg}
+For each $i\in\{0,1,2,3\}$ and every $c\in\ZZ^4$:
+\begin{itemize}
+\item[\rm(i)] for $m=4,\dots,14$:\ \ $F^{(i,c)}_m\neq0$ and
+$\vv\bigl(F^{(i,c)}_m\bigr)=w\bigl((B_i+m-4)\bmod44\bigr)$;
+\item[\rm(ii)] for $a=0,\dots,3$:\ \
+$\displaystyle\sum_{j=0}^{3}(H_{i+1})_{aj}
+\Bigl(\frac{F^{(i,c)}_{11+j}}{F^{(i,0)}_{11+j}}-1\Bigr)\ \in\ \ZZ$,
+\end{itemize}
+where $H_{i+1}$ is taken with $i+1$ modulo $4$. In particular, by the dual
+description of the tubes, the output deviation
+$\bigl(F^{(i,c)}_{11+j}/a_{B_i+11+j}-1\bigr)_{j}$ lies in $V_{i+1}$.
+\end{lemma}
+
+The proof of Lemma~\ref{lem:seg} is a finite certified computation,
+described in Section~\ref{sec:cert}. We first show how it yields the theorem.
+
+\subsection*{The induction over periods}
+
+For $i\le2$ we have $B_i+11=B_{i+1}$, so $F^{(i,0)}_{11+j}=a_{B_{i+1}+j}$ and
+Lemma~\ref{lem:seg}(ii) transports a tube perturbation at boundary $i$
+directly to one at boundary $i+1$, with the same $k$:
+if $a_{B_i+44k+j}=F^{(i,c)}_j$ ($j\le3$) with $c\in\ZZ^4$, then
+$a_{B_{i+1}+44k+j}=F^{(i+1,c')}_j$ with
+$c'_a=\sum_j(H_{i+1})_{aj}(a_{B_{i+1}+44k+j}/a_{B_{i+1}+j}-1)\in\ZZ$,
+using $G_{i+1}H_{i+1}$-duality to reconstruct the deviation from its
+coordinates.
+
+At the wrap $i=3$ the centers differ by one period:
+$F^{(3,0)}_{11+j}=a_{66+j}=a_{B_0+44+j}$, while the next tube is anchored at
+$a_{22+j}$. Write
+\[
+\xi'_j:=\frac{a_{66+44k+j}}{a_{66+j}}-1,\qquad
+\xi^{0}_j:=\frac{a_{66+j}}{a_{22+j}}-1,\qquad
+\xi^{\rm tot}_j:=\frac{a_{22+44(k+1)+j}}{a_{22+j}}-1 ,
+\]
+so that $1+\xi^{\rm tot}_j=(1+\xi'_j)(1+\xi^0_j)$, i.e.\
+$\xi^{\rm tot}=\xi'+\xi^{0}+\xi'\xi^{0}$ componentwise. Lemma~\ref{lem:seg}(ii)
+gives $H_0\xi'\in\ZZ^4$. The vector $\xi^0$ is a fixed rational vector; from
+the certified residues of Proposition~\ref{prop:base} one verifies
+\begin{equation}\label{eq:wrapdata}
+\vv(\xi^0)=(5,4,4,5),\qquad H_0\,\xi^{0}\in\ZZ^4
+\end{equation}
+(the four coordinates of $H_0\xi^0$ have $\vv=(1,4,0,1)$; the individual
+products $(H_0)_{aj}\xi^0_j$ can have $\vv=-1$, so the cancellation across
+$j$ is genuine and is checked on the combined values). Finally, for the cross
+term: $\xi'\in V_0$ gives $\vv(\xi'_j)\ge 4$ (the minimal column valuation of
+$G_0$), so with $\vv((H_0)_{aj})\ge-5$ and \eqref{eq:wrapdata} each product
+$(H_0)_{aj}\,\xi'_j\,\xi^{0}_j$ has $\vv\ge-5+4+4=3$. Summing,
+$H_0\,\xi^{\rm tot}\in\ZZ^4$, i.e.\ $\xi^{\rm tot}\in V_0$: a tube
+perturbation at $(B_3,k)$ transports to one at $(B_0,k+1)$.
+
+\begin{proof}[Proof of Theorem~\ref{thm:word}]
+By induction on $k$: the window at $B_0+44k$ is a $V_0$-perturbation of the
+base window. For $k=0$ take $c=0$. Given the statement at $k$, apply
+Lemma~\ref{lem:seg} for $i=0,1,2$ and the wrap argument for $i=3$; along the
+way part~(i) yields
+$\alpha_{B_i+44k+m}=w((B_i+m-4)\bmod44)$ for $m=4,\dots,14$ and all four $i$,
+i.e.\ the word on the $44$ consecutive indices $26+44k,\dots,69+44k$. Ranging
+over $k$ this covers all $n\ge26$; the range $4\le n\le25$ is
+Proposition~\ref{prop:base}.
+\end{proof}
+
+\section{Certification of the Segment Lemma}\label{sec:cert}
+
+Lemma~\ref{lem:seg} quantifies over the infinite set $c\in\ZZ^4$; it is
+established by computing with certified polynomial enclosures (\emph{jets})
+of the functions $c\mapsto F^{(i,c)}_m$. All arithmetic below is exact
+rational arithmetic; every bound is a $2$-adic valuation inequality between
+explicitly given rational numbers. We write $F_m:=F^{(i,c)}_m$ and suppress
+$i$.
+
+\begin{definition}\label{def:jet}
+A \emph{jet} is a pair $J=(P,\tau)$ with
+$P\in\Q[x_0,x_1,x_2,x_3]$ given by its (sparse) coefficient list and
+$\tau\in\Z$. It \emph{represents} a function $f:\ZZ^4\to\Q$ if
+\begin{itemize}
+\item[\rm(a)] $\vv\bigl(f(c)-P(c)\bigr)\ge\tau$ for all $c\in\ZZ^4$, and
+\item[\rm(b)] for all $c,c'\in\ZZ^4$ and integers $e\ge0$ with
+$\vv(c'_a-c_a)\ge e$ for each $a$:
+\[
+\vv\Bigl(\bigl(f(c')-P(c')\bigr)-\bigl(f(c)-P(c)\bigr)\Bigr)\ \ge\ \tau+e .
+\]
+\end{itemize}
+\end{definition}
+
+Condition (b) --- the \emph{two-point} tail bound --- is what makes
+truncation sound: it expresses that the neglected tail is itself a
+$2$-adically Lipschitz function of the parameters, which is automatic for
+polynomial tails (every monomial difference retains a difference factor)
+and is preserved by all operations below.
+
+Write $\delta(P):=\min_t \vv(\text{coefficient }t)$ over the terms of $P$.
+The following closure rules for jets in the sense of
+Definition~\ref{def:jet} are elementary ultrametric estimates; each is
+stated with the exact parameter update used.
+
+\begin{lemma}\label{lem:ops}
+Let $(P_1,\tau_1)$, $(P_2,\tau_2)$ represent $f,g$. Then:
+\begin{itemize}
+\item[\rm(1)] {\rm(product)} $(P_1P_2,\ \min(\tau_1+\min(\delta(P_2),\tau_2),\
+\delta(P_1)+\tau_2))$ represents $fg$;
+\item[\rm(2)] {\rm(reanchoring)} if $P_1=P'+E$ with
+$\delta(E)\ge s$, then $(P',\min(\tau_1,s))$ represents $f$; likewise scalar
+multiples and sums with the obvious updates;
+\item[\rm(3)] {\rm(certified inversion)} if $f$ takes unit values on $\ZZ^4$
+{\rm(}$\vv(f(c))=0${\rm)}, $\delta(P_1)\ge0$, $\tau_1\ge0$, and a
+\emph{witness} polynomial $W$ satisfies $\delta(P_1W-1)\ge s$, then
+$(W,\ \min(s,\tau_1+\delta(W)))$ represents $1/f$;
+\item[\rm(4)] {\rm(event reading)} if $f=F/2^{\alpha}$ for a represented
+window value $F$ with constant term $T=P_1(0)$, and the explicit checks
+$\vv(1+T)=\beta$, $\delta(P_1-T)\ge\beta+1$ and $\tau_1\ge\beta+1$ hold, then
+$F+1\neq0$ and $\vv(F(c)+1)=\beta$ \emph{for every} $c\in\ZZ^4$, and
+$((1+P_1)2^{-\beta},\ \tau_1-\beta)$ represents $(F+1)/2^{\beta}$;
+\item[\rm(5)] {\rm(division step)} valuations add along
+\eqref{eq:rec}: if the three $b$-readings and the divisor have certified
+valuations $\beta',\beta'',\beta''',\alpha'$ on all of $\ZZ^4$, the new value
+is nonzero with valuation $\beta'+\beta''+\beta'''-\alpha'$ on all of
+$\ZZ^4$, and its unit part is represented by the product jet of the three
+unit $b$-jets and the inverted divisor jet;
+\item[\rm(6)] {\rm(deviation reading)} if $(P,\tau)$ represents the unit part
+$f$ of an output value, $P=T+R$ with constant $T$ odd and $R(0)=0$,
+$\delta(R)\ge0$, then for all $c\in\ZZ^4$
+\[
+\vv\Bigl(T\bigl(\tfrac{f(c)}{f(0)}-1\bigr)-R(c)\Bigr)\ \ge\ \tau .
+\]
+\end{itemize}
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+(1): $fg-P_1P_2=(f-P_1)g+P_1(g-P_2)$, bound $g$ by
+$\min(\delta(P_2),\tau_2)$ on $\ZZ^4$ and $P_1$ by $\delta(P_1)$; the
+two-point form follows from the same split plus (b) for the factors.
+(3): $1/f-W=(1-fW)/f=\bigl((1-P_1W)-(f-P_1)W\bigr)/f$ with $\vv(f)=0$.
+(4): $1+P_1(c)=(1+T)+(P_1(c)-T)$ and the deviation terms all have
+$\vv\ge\beta+1>\beta=\vv(1+T)$; then divide by $2^\beta$.
+(6): with $A(c):=f(c)-P(c)$,
+\[
+T\Bigl(\frac{f(c)}{f(0)}-1\Bigr)-R(c)
+=\frac{T\bigl(A(c)-A(0)\bigr)-R(c)\,A(0)}{f(0)},
+\]
+whose numerator has $\vv\ge\tau$ by (b) (taken at the pair $(0,c)$, $e=0$)
+and (a), and whose denominator is a unit. The remaining items are similar
+one-line computations.
+\end{proof}
+
+\subsection*{The certificate}
+
+For each boundary $i$ the certificate consists of explicit data whose finite
+side conditions imply Lemma~\ref{lem:seg} by composing the rules of
+Lemma~\ref{lem:ops} along the eleven steps:
+
+\begin{itemize}
+\item \emph{Initial jets.} For $j=0,\dots,3$ the affine polynomial
+$T_j+T_j\sum_a x_a(G_i)_{aj}$, with $T_j$ the certified residue of
+$u_{B_i+j}$ from Proposition~\ref{prop:base}, represents the unit part of
+$F_j$ with tail $\tau=K_{B_i+j}\ (\ge558)$: this is exactly the statement
+that $u_{B_i+j}\equiv T_j \pmod{2^{K}}$, and the actual value $a_{B_i+j}$
+never appears --- only its residue.
+\item \emph{Per step} $m=4,\dots,14$: one certified inversion witness (rule
+(3)); three products (rule (1)); after each product a reanchoring (rule (2))
+onto an explicitly listed compact polynomial --- the discarded part $E$ is an
+exact polynomial identity, and only the valuations of its coefficients enter;
+an event reading (rule (4)) or, when $\alpha>0$, the corresponding positive
+case, for each of the three $b$-factors; and the division step (rule (5)).
+This proves part (i) of the Lemma at step $m$.
+\item \emph{Truncation parameters.} Kept polynomials are capped in total
+degree --- degree $2$ suffices at $36$ of the $44$ steps; the remaining eight
+need degrees $3$--$5$ (degree $5$ at exactly two steps); kept coefficients are
+truncated $2$-adically at $90$ bits, the truncation error being absorbed into
+the tails, which never need to exceed $\approx15$ bits. That degree $5$ is
+necessary (a uniform degree-$4$ certificate fails by one bit in the tail
+transport) reflects genuine high-order cancellations in the dynamics.
+\item \emph{Output readings.} For the four output jets ($m=11,\dots,14$),
+rule (6) plus the explicit coefficient checks that each combined polynomial
+$\sum_j (H_{i+1})_{aj}T_j^{-1}R_j$ has all coefficient valuations $\ge0$
+--- computed on the \emph{combined} polynomial, since the per-$j$ summands
+can fall one bit short --- prove part (ii). The wrap data
+\eqref{eq:wrapdata} is verified directly from the residues of
+Proposition~\ref{prop:base}: $\xi^0_j$ agrees with the residue ratio
+$T_{66+j}/T_{22+j}-1$ to within $2^{-500}$, so its valuation and the four
+combined sums $H_0\xi^0$ are determined by exact rational numbers.
+\end{itemize}
+
+All side conditions are finitely many assertions of two kinds: exact
+polynomial identities over $\Q$ (each reanchoring and each inversion
+witness), and $2$-adic valuations of explicitly given rationals. The full
+certificate comprises roughly $250$ polynomial identities and $3{,}000$
+coefficient valuations; it is generated deterministically by short scripts
+and, more importantly, has been verified formally (Section~\ref{sec:final}).
+
+\begin{remark}
+The structure of the proof mirrors the structure of the dynamics. In
+logarithmic unit coordinates the $44$-step return map is a $2$-adic isometry
+(its Jacobian, suitably rescaled, lies in $GL_4(\Z_2)$ and is unipotent
+modulo $2$), so consecutive-period deviations neither grow nor decay: the
+sequence $\vv(u_{n+44}/u_n-1)$ is \emph{exactly} periodic in $n$, with zero
+margin over the required event depths at two of the four $\beta=5$ events per
+period. The tubes $V_i$ encode, besides the depth profile, the finitely many
+linear congruences (``hidden invariants'') that the plain profile ball does
+not see; that the certificate closes only at jet degree $5$ corresponds to
+the fact, visible in the Mahler difference hierarchy of the orbit, that the
+relevant cancellations are of genuinely high order.
+\end{remark}
+
+\section{Formal verification}\label{sec:final}
+
+The complete proof of Theorem~\ref{thm:main} --- Theorem~\ref{thm:odd}, the
+base computation of Proposition~\ref{prop:base}, the Segment Lemma with its
+entire certificate, and the induction of Section~\ref{sec:proofword} --- has
+been formalized and machine-checked in Lean~4 with Mathlib. The formalization
+is a single self-contained file, \texttt{A276175\_complete.lean}, in which
+the sequence is defined by the recurrence alone and the final statement is
+\[
+\texttt{theorem a276175\_integrality (n : \(\mathbb{N}\)) : \(\exists\) z :
+\(\mathbb{Z}\), a n = z}
+\]
+It compiles in under five minutes, contains no unproven assertions
+(\texttt{sorry}-free), and depends only on the three standard axioms of
+Lean's logic (propositional extensionality, choice, quotient soundness), as
+reported by the kernel's axiom audit. The soundness rules of
+Lemma~\ref{lem:ops} are proved once as reusable lemmas; the certificate data
+(tube generators, residues, jets, witnesses) is emitted by short,
+deterministic generation scripts and every side condition is discharged by
+kernel-checked computation.
+
+\begin{thebibliography}{9}
+\bibitem{oeis} OEIS Foundation Inc., entry \emph{A276175},
+\texttt{https://oeis.org/A276175}.
+\bibitem{mse} \emph{Is A276175 integer-only?}, Mathematics Stack Exchange,
+question 1905063 (2016).
+\bibitem{FZ} S.~Fomin and A.~Zelevinsky, \emph{The Laurent phenomenon},
+Adv.\ in Appl.\ Math.\ \textbf{28} (2002), 119--144.
+\bibitem{kanki} R.~Kamiya, M.~Kanki, T.~Mase, and T.~Tokihiro,
+\emph{Coprimeness-preserving non-integrable extension to the two-dimensional
+discrete Toda lattice equation}, J.~Math.\ Phys.\ \textbf{58} (2017),
+012702, and related works.
+\end{thebibliography}
+
+\end{document}
