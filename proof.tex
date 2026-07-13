@@ -394,9 +394,6 @@ The formal dependency chain for integrality is
 \Longrightarrow\ \text{integrality}.
 \end{gathered}
 \]
-Neither the cluster embedding nor the Laurent phenomenon is used in this
-chain.
-
 \begin{proof}[Proof of Theorem~\ref{thm:main}]
 By Corollary~\ref{cor:odd}, $a_n\in\Z[\tfrac12]$: no odd prime divides its
 denominator.  By the machine-checked nonnegativity consequence described after
@@ -404,25 +401,6 @@ Corollary~\ref{cor:two}, $\vt(a_n)\ge0$, so no power of $2$ divides its
 denominator either.  Hence $a_n$ has denominator $1$, and therefore
 $a_n\in\Z$.
 \end{proof}
-
-\begin{remark}[Optional context: the cluster embedding]
-The Lean file proves the following embedding, but the final integrality theorem
-does not use it.  Define $(x_n)$ by
-\[
-x_0=4,\ x_1=\tfrac12,\ x_2=4,\ x_3=\tfrac12,\qquad
-x_{n+4}\,x_n=1+x_{n+1}x_{n+2}x_{n+3}.
-\]
-Then $(a_n')$ with $a_n':=x_{n+1}x_{n+2}x_{n+3}$ satisfies
-\eqref{eq:rec} with the same four initial values, and the formal lemma
-\texttt{cluster} proves
-$a_n=x_{n+1}x_{n+2}x_{n+3}$.
-
-The further identification of the $x$-recurrence as a period-one cluster
-recurrence and the invocation of the Laurent phenomenon are external context,
-not results proved in the supplied Lean file.  They give another mathematical
-route to $x_n\in\Z[\tfrac12]$ and hence $a_n\in\Z[\tfrac12]$, but they are not
-part of the proof dependency chain above.
-\end{remark}
 
 \begin{remark}
 Corollary~\ref{cor:two} shows that the valuation sequence is $44$-periodic.

@@ -5,37 +5,31 @@
       a (n+4) * a n = (a (n+3) + 1) (a (n+2) + 1) (a (n+1) + 1)   ⟹   a n ∈ ℤ.
 
   Two ingredients:
-    * `A276175Cluster` — the cluster embedding `a n = x (n+1) x (n+2) x (n+3)`
-      into the period-one recurrence `x (n+4) x n = 1 + x (n+1) x (n+2) x (n+3)`
-      (`x 0,…,x 3 = 4, 1/2, 4, 1/2`).  This reduces integrality to
-      `0 ≤ padicValRat p (a n)` for all primes `p`, proved for odd `p` and
-      reduced for `p = 2` to `∀ n, 0 ≤ padicValRat 2 (a n)`.
-    * `Return` — the 2-adic bound for `p = 2`, via a 44-step return lemma over
-      the tube `1 + 16ℤ₂`: the valuations follow a period-44 word `w_n ≥ 0` and
-      the window returns to the tube after 44 steps, so it iterates.  The finite
-      computation in ℤ₂[[z₀,z₁,z₂,z₃]] is decided by `native_decide` (`checkerB`).
+    * `A276175` — an elementary odd-prime valuation induction proves
+      `0 ≤ padicValRat p (a n)` for every odd prime `p`, followed by the
+      valuation criterion for rational integers.
+    * `Return` — the bound at `p = 2`, via a 44-step return lemma for rational
+      points of the tube `1 + 16ℤ₂`.  A finite computation with polynomial jets
+      is decided by `native_decide` (`checkerB`) and connected to the rational
+      recurrence by the invariant `Rep`.
 
-  `a = seq (win 0)` connects the two, giving `A276175_integrality`.
+  `a = seq (win 0)` connects the return argument to the original sequence,
+  giving `A276175_integrality`.
 -/
 import Mathlib.NumberTheory.Padics.PadicVal.Basic
 import Mathlib.Tactic
 import Std.Data.HashMap
 
-namespace A276175Cluster
+namespace A276175
 
-/-! ## The two sequences -/
+/-! ## The sequence -/
 
 /-- OEIS A276175. -/
 def a : ℕ → ℚ
   | 0 => 1 | 1 => 1 | 2 => 1 | 3 => 1
   | n + 4 => (a (n + 3) + 1) * (a (n + 2) + 1) * (a (n + 1) + 1) / a n
 
-/-- The cluster variables of the period-one recurrence. -/
-def x : ℕ → ℚ
-  | 0 => 4 | 1 => 1/2 | 2 => 4 | 3 => 1/2
-  | n + 4 => (1 + x (n + 1) * x (n + 2) * x (n + 3)) / x n
-
-/-! ## Positivity and the recurrences in product form -/
+/-! ## Positivity and the recurrence in product form -/
 
 lemma a_pos : ∀ n, 0 < a n := by
   intro n
@@ -55,74 +49,11 @@ lemma a_pos : ∀ n, 0 < a n := by
 
 lemma a_ne (n : ℕ) : a n ≠ 0 := (a_pos n).ne'
 
-lemma x_pos : ∀ n, 0 < x n := by
-  intro n
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-    match n with
-    | 0 => norm_num [x]
-    | 1 => norm_num [x]
-    | 2 => norm_num [x]
-    | 3 => norm_num [x]
-    | n + 4 =>
-      have h0 := ih n (by omega)
-      have h1 := ih (n+1) (by omega)
-      have h2 := ih (n+2) (by omega)
-      have h3 := ih (n+3) (by omega)
-      rw [x]; positivity
-
-lemma x_ne (n : ℕ) : x n ≠ 0 := (x_pos n).ne'
-
 /-- The `a`-recurrence in product form. -/
 lemma rec_eq (n : ℕ) :
     a (n + 4) * a n = (a (n + 3) + 1) * (a (n + 2) + 1) * (a (n + 1) + 1) := by
   show ((a (n + 3) + 1) * (a (n + 2) + 1) * (a (n + 1) + 1) / a n) * a n = _
   rw [div_mul_cancel₀ _ (a_ne n)]
-
-/-- The `x`-recurrence in product form. -/
-lemma x_rec (n : ℕ) : x (n + 4) * x n = 1 + x (n + 1) * x (n + 2) * x (n + 3) := by
-  show ((1 + x (n + 1) * x (n + 2) * x (n + 3)) / x n) * x n = _
-  rw [div_mul_cancel₀ _ (x_ne n)]
-
-/-! ## Small values of `x` -/
-
-lemma x4 : x 4 = 1/2 := by norm_num [x]
-lemma x5 : x 5 = 4 := by norm_num [x]
-lemma x6 : x 6 = 1/2 := by norm_num [x]
-
-/-! ## The cluster embedding -/
-
-/-- **The cluster embedding**: `a n = x (n+1) * x (n+2) * x (n+3)`.
-This is the heart of the proof: the two sequences satisfy the same order-four
-recurrence and the same initial conditions. -/
-lemma cluster (n : ℕ) : a n = x (n + 1) * x (n + 2) * x (n + 3) := by
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-    match n with
-    | 0 => norm_num [a, x]
-    | 1 => norm_num [a, x]
-    | 2 => norm_num [a, x]
-    | 3 => norm_num [a, x]
-    | m + 4 =>
-      -- Inductive hypotheses (normalized indices, accepted by defeq).
-      have e0 : a m = x (m+1) * x (m+2) * x (m+3) := ih m (by omega)
-      have e1 : a (m+1) = x (m+2) * x (m+3) * x (m+4) := ih (m+1) (by omega)
-      have e2 : a (m+2) = x (m+3) * x (m+4) * x (m+5) := ih (m+2) (by omega)
-      have e3 : a (m+3) = x (m+4) * x (m+5) * x (m+6) := ih (m+3) (by omega)
-      -- x-recurrences (normalized indices, accepted by defeq).
-      have R1 : x (m+5) * x (m+1) = 1 + x (m+2) * x (m+3) * x (m+4) := x_rec (m+1)
-      have R2 : x (m+6) * x (m+2) = 1 + x (m+3) * x (m+4) * x (m+5) := x_rec (m+2)
-      have R3 : x (m+7) * x (m+3) = 1 + x (m+4) * x (m+5) * x (m+6) := x_rec (m+3)
-      have h1 : x (m+2) * x (m+3) * x (m+4) + 1 = x (m+1) * x (m+5) := by
-        linear_combination -R1
-      have h2 : x (m+3) * x (m+4) * x (m+5) + 1 = x (m+2) * x (m+6) := by
-        linear_combination -R2
-      have h3 : x (m+4) * x (m+5) * x (m+6) + 1 = x (m+3) * x (m+7) := by
-        linear_combination -R3
-      show a (m+4) = x (m+5) * x (m+6) * x (m+7)
-      have key : a (m+4) * a m = (x (m+5) * x (m+6) * x (m+7)) * a m := by
-        rw [rec_eq m, e1, e2, e3, h1, h2, h3, e0]; ring
-      exact mul_right_cancel₀ (a_ne m) key
 
 /-! ## Integrality at every odd prime
 
@@ -464,19 +395,6 @@ theorem odd_prime_val_nonneg (hp2 : p ≠ 2) (n : ℕ) :
 
 end OddPrime
 
-/-! ## Step 2 setup: the 2-adic valuation of `a` via the cluster embedding
-
-The cluster embedding gives `padicValRat 2 (a n) = e (n+1) + e (n+2) + e (n+3)`
-with `e n := padicValRat 2 (x n)`  (lemma `val2_a`).  The remaining input
-`∀ n, 0 ≤ padicValRat 2 (a n)` is supplied by `Return.val_nonneg` (Part 2). -/
-
-/-- The 2-adic valuation of `a n` splits along the cluster embedding. -/
-lemma val2_a (n : ℕ) :
-    padicValRat 2 (a n)
-      = padicValRat 2 (x (n+1)) + padicValRat 2 (x (n+2)) + padicValRat 2 (x (n+3)) := by
-  rw [cluster n, padicValRat.mul (mul_ne_zero (x_ne _) (x_ne _)) (x_ne _),
-    padicValRat.mul (x_ne _) (x_ne _)]
-
 /-! ## The bridge to integrality -/
 
 /-- If `0 ≤ padicValRat p r` for every prime `p`, then `r` is an integer. -/
@@ -513,7 +431,7 @@ theorem integrality (h2 : ∀ n, 0 ≤ padicValRat 2 (a n)) (n : ℕ) :
   · exact odd_prime_val_nonneg p hp2 n
 
 
-end A276175Cluster
+end A276175
 
 /-! ## Part 2: the 2-adic bound `∀ n, 0 ≤ padicValRat 2 (a n)`
 
@@ -1771,23 +1689,23 @@ end Return
 /-! ## Connection: `a = seq (win 0)`, and the main theorem -/
 
 /-- the A276175 sequence is the `seq` of the all-zero (centre) tube window. -/
-lemma a_eq_seq : ∀ n, A276175Cluster.a n = Return.seq (Return.win (fun _ => 0)) n := by
+lemma a_eq_seq : ∀ n, A276175.a n = Return.seq (Return.win (fun _ => 0)) n := by
   intro n
   induction n using Nat.strong_induction_on with
   | _ n ih =>
     match n, ih with
-    | 0, _ => norm_num [A276175Cluster.a, Return.seq, Return.win]
-    | 1, _ => norm_num [A276175Cluster.a, Return.seq, Return.win]
-    | 2, _ => norm_num [A276175Cluster.a, Return.seq, Return.win]
-    | 3, _ => norm_num [A276175Cluster.a, Return.seq, Return.win]
+    | 0, _ => norm_num [A276175.a, Return.seq, Return.win]
+    | 1, _ => norm_num [A276175.a, Return.seq, Return.win]
+    | 2, _ => norm_num [A276175.a, Return.seq, Return.win]
+    | 3, _ => norm_num [A276175.a, Return.seq, Return.win]
     | (m+4), ih =>
       have e0 := ih m (by omega)
       have e1 := ih (m+1) (by omega)
       have e2 := ih (m+2) (by omega)
       have e3 := ih (m+3) (by omega)
-      have hL : A276175Cluster.a (m+4)
-          = (A276175Cluster.a (m+3) + 1) * (A276175Cluster.a (m+2) + 1)
-              * (A276175Cluster.a (m+1) + 1) / A276175Cluster.a m := rfl
+      have hL : A276175.a (m+4)
+          = (A276175.a (m+3) + 1) * (A276175.a (m+2) + 1)
+              * (A276175.a (m+1) + 1) / A276175.a m := rfl
       have hR : Return.seq (Return.win (fun _ => 0)) (m+4)
           = (Return.seq (Return.win (fun _ => 0)) (m+3) + 1)
               * (Return.seq (Return.win (fun _ => 0)) (m+2) + 1)
@@ -1796,10 +1714,10 @@ lemma a_eq_seq : ∀ n, A276175Cluster.a n = Return.seq (Return.win (fun _ => 0)
       rw [hL, hR, e0, e1, e2, e3]
 
 /-- the 2-adic bound at the centre window: `v₂(a n) ≥ 0` for all `n`. -/
-lemma val_nonneg_a (n : ℕ) : 0 ≤ padicValRat 2 (A276175Cluster.a n) := by
+lemma val_nonneg_a (n : ℕ) : 0 ≤ padicValRat 2 (A276175.a n) := by
   rw [a_eq_seq n]
   exact Return.val_nonneg n (fun _ => 0) (fun _ => Return.Int2.zero)
 
 /-- every term of OEIS A276175 is an integer. -/
-theorem A276175_integrality (n : ℕ) : ∃ z : ℤ, A276175Cluster.a n = z :=
-  A276175Cluster.integrality val_nonneg_a n
+theorem A276175_integrality (n : ℕ) : ∃ z : ℤ, A276175.a n = z :=
+  A276175.integrality val_nonneg_a n
