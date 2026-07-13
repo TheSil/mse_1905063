@@ -9,6 +9,7 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma}
 \newtheorem{proposition}{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
 \theoremstyle{remark}
 \newtheorem*{remark}{Remark}
 
@@ -36,8 +37,8 @@ produces only integers.  A rational number is an integer iff it has
 nonnegative valuation at every prime, so the statement splits into two
 independent parts.  For odd primes the valuations are controlled by an
 elementary ``atom'' induction.  The remaining obstruction, at the prime~$2$,
-is settled by a $44$-step $2$-adic return lemma over the tube $1+16\Ztwo$,
-whose only computational core is a finite, decidable check in the rings
+is settled by a $44$-step $2$-adic return lemma for rational points of the tube
+$1+16\Ztwo$, whose computational core is a finite, decidable check in the rings
 $\Z/2^m\Z$.
 \end{abstract}
 
@@ -69,8 +70,8 @@ methods:
 \item Odd primes $p$ (Section~\ref{sec:odd}): an elementary induction on
       auxiliary integers $t_p(n)$ attached to the shifted sequence
       $b_n=a_n+1$.  This yields $a_n\in\Z[\tfrac12]$.
-\item The prime $2$ (Section~\ref{sec:two}): a $2$-adic return lemma showing
-      $\vt(a_n)$ equals an explicit nonnegative $44$-periodic word.
+\item The prime $2$ (Section~\ref{sec:two}): a return lemma for rational
+      $2$-adic tube points, yielding an explicit nonnegative $44$-periodic word.
 \end{itemize}
 Together they give \eqref{eq:goal} and hence Theorem~\ref{thm:main}
 (Section~\ref{sec:conclusion}).
@@ -102,97 +103,126 @@ Thus $t_n$ is the ``atom'' of $p$-adic valuation freshly deposited at
 index~$n$; \eqref{eq:vb} says the valuation of $b_{n+4}$ is the sum of the
 atom it carries and the atom four steps back.
 
-\begin{proposition}\label{prop:atoms}
+The valuation identity is established first; it does not use nonnegativity of
+the atoms.
+
+\begin{lemma}[Valuation identity]\label{lem:val-a}
+For every $n\ge0$,
+\begin{equation}
+v(a_{n+4})=t_{n+1}+t_{n+2}+t_{n+3}.
+\label{eq:val-a}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+We use strong induction in the same form as the Lean lemma \texttt{val\_a}.
+For $n=0,1,2,3$, use
+\[
+a_4=2^3,\quad a_5=2^2\cdot3^2,\quad a_6=2\cdot3^2\cdot37,\quad
+a_7=3^2\cdot37\cdot667,
+\]
+and
+\[
+t_4=v(9),\qquad t_5=v(37),\qquad t_6=v(667).
+\]
+Because $p$ is odd, $v(2)=0$, so these four cases give
+\eqref{eq:val-a} directly.
+
+For the induction step write $n=m+4$.  Taking valuations in the recurrence at
+index $m+4$ and using \eqref{eq:vb} gives
+\begin{align*}
+v(a_{m+8})+v(a_{m+4})
+={}&(t_{m+5}+t_{m+1})+(t_{m+6}+t_{m+2})\\
+ &+(t_{m+7}+t_{m+3}).
+\end{align*}
+The induction hypothesis at $m$ is
+$v(a_{m+4})=t_{m+1}+t_{m+2}+t_{m+3}$.  Subtraction proves
+$v(a_{m+8})=t_{m+5}+t_{m+6}+t_{m+7}$, as required.
+\end{proof}
+
+\begin{proposition}[Nonnegativity and burst confinement]\label{prop:atoms}
 For every $n\ge0$ the following hold:
 \begin{itemize}
 \item[\textup{(I)}] $t_n\ge0$;
-\item[\textup{(II)}] $v(a_{n+4})=t_{n+1}+t_{n+2}+t_{n+3}$;
-\item[\textup{(III)}] if $t_{n+4}>0$ then $t_{n+1}=t_{n+2}=t_{n+3}=0$.
+\item[\textup{(III)}] for every $k$ such that $n=k+4$, if $t_n>0$, then
+      $t_{k+1}=t_{k+2}=t_{k+3}=0$.
 \end{itemize}
 \end{proposition}
 
-Property (III) is a \emph{burst-confinement}: valuation can appear only in
-isolated bursts, never adjacent to a previous one.  We first record the
-consequence.
+Property (III) says that positive atoms occur only in isolated bursts.  Notice
+that Lemma~\ref{lem:val-a} is already available before (I) and (III) are proved.
+
+\begin{proof}
+We prove (I) and (III) together by strong induction, exactly as in the Lean
+lemma \texttt{main\_induction}.  The base indices $n=0,\dots,7$ use
+$t_0=\cdots=t_3=0$ and
+\[
+b_4=3^2,\quad b_5=37,\quad b_6=23\cdot29,\quad b_7=2^5\cdot11\cdot631,
+\]
+so $t_j=v(b_j)\ge0$ for $4\le j\le7$.  If one is positive, primality of
+$p$ and the displayed factorizations force the preceding three atoms to
+vanish; for example, $t_6>0$ forces $p=23$ or $29$, neither of which divides
+$b_4$ or $b_5$.  This checks both assertions at the eight base indices.
+
+For the induction step, assume both assertions through index $k+7$ and prove
+them at $k+8$.  First prove (I).  Lemma~\ref{lem:val-a} and the induction
+hypotheses give
+\[
+v(a_{k+8})=t_{k+5}+t_{k+6}+t_{k+7}\ge0.
+\]
+We need $v(b_{k+8})\ge t_{k+4}$, which is equivalent to $t_{k+8}\ge0$ by
+\eqref{eq:t-def}.  If $t_{k+4}=0$, then
+$b_{k+8}=1+a_{k+8}$ and the ultrametric inequality immediately gives
+$v(b_{k+8})\ge0$.
+
+Suppose instead that $T:=t_{k+4}>0$.  The already proved burst assertion at
+index $k+4$ gives $t_{k+1}=t_{k+2}=t_{k+3}=0$.  Hence
+Lemma~\ref{lem:val-a} gives
+\[
+v(a_{k+4})=t_{k+1}+t_{k+2}+t_{k+3}=0.
+\]
+Rewrite \eqref{eq:star} at index $k+4$ as
+\begin{equation}
+b_{k+8}a_{k+4}
+=b_{k+4}+a_{k+7}b_{k+6}b_{k+5}
+ +a_{k+6}b_{k+5}+a_{k+5}.
+\label{eq:star2}
+\end{equation}
+Every summand on the right has valuation at least $T$.  Indeed,
+\begin{itemize}
+\item $v(b_{k+4})=t_{k+4}+t_k\ge T$;
+\item $v(a_{k+5})=t_{k+2}+t_{k+3}+t_{k+4}=T$;
+\item $v(a_{k+6})=t_{k+3}+t_{k+4}+t_{k+5}\ge T$ and
+      $v(b_{k+5})=t_{k+5}+t_{k+1}\ge0$;
+\item $v(a_{k+7})=t_{k+4}+t_{k+5}+t_{k+6}\ge T$, while
+      $v(b_{k+5}),v(b_{k+6})\ge0$.
+\end{itemize}
+Thus \eqref{eq:star2} has valuation at least $T$.  Since $v(a_{k+4})=0$,
+we obtain $v(b_{k+8})\ge T$, proving $t_{k+8}\ge0$.
+
+It remains to prove (III) at $k+8$.  If $t_{k+8}>0$, then
+\[
+v(b_{k+8})=t_{k+8}+t_{k+4}>0
+\]
+by the nonnegativity already known through $k+7$.  Since
+$a_{k+8}=b_{k+8}-1$, it follows that $v(a_{k+8})=0$.  Applying
+Lemma~\ref{lem:val-a} at $k+4$ yields
+\[
+0=v(a_{k+8})=t_{k+5}+t_{k+6}+t_{k+7}.
+\]
+All three atoms are nonnegative by the induction hypothesis, so each is zero.
+This proves the burst assertion at $k+8$ and closes the induction.
+\end{proof}
 
 \begin{corollary}\label{cor:odd}
 $v(a_n)\ge0$ for all $n$.  As $p$ ranges over all odd primes,
 $a_n\in\Z[\tfrac12]$.
 \end{corollary}
 \begin{proof}
-For $n\le3$, $a_n=1$ and $v(a_n)=0$.  For $n\ge4$, (II) and (I) give
+For $n\le3$, $a_n=1$ and $v(a_n)=0$.  For $n\ge4$,
+Lemma~\ref{lem:val-a} and Proposition~\ref{prop:atoms} give
 $v(a_n)=t_{n-3}+t_{n-2}+t_{n-1}\ge0$.  Hence no odd prime divides the
 denominator of $a_n$.
-\end{proof}
-
-\begin{proof}[Proof of Proposition~\ref{prop:atoms}]
-We argue by strong induction on $n$, proving (I)--(III) simultaneously.  The
-base indices $n=0,\dots,7$ use the explicit values
-\[
-a_4=2^3,\quad a_5=2^2\cdot3^2,\quad a_6=2\cdot3^2\cdot37,\quad
-a_7=3^2\cdot37\cdot667,
-\]
-\[
-b_4=3^2,\quad b_5=37,\quad b_6=23\cdot29,\quad b_7=2^5\cdot11\cdot631,
-\]
-from which (I)--(III) are checked directly (for an odd prime $p$, each
-$t_j$ with $4\le j\le7$ equals $v$ of the corresponding odd integer, hence
-$\ge0$, and a positive $t_j$ pins $p$ to one of the listed odd factors,
-forcing the three preceding atoms to vanish).  Assume now $n\ge4$ and that
-(I)--(III) hold for all smaller indices.
-
-\smallskip
-\emph{(II).}  Taking $v$ of $a_{n+4}a_n=b_{n+1}b_{n+2}b_{n+3}$ and using
-\eqref{eq:vb} termwise,
-\[
-v(a_{n+4})+v(a_n)
-=\bigl(t_{n+1}+t_{n-3}\bigr)+\bigl(t_{n+2}+t_{n-2}\bigr)
- +\bigl(t_{n+3}+t_{n-1}\bigr).
-\]
-By the inductive form of (II), $v(a_n)=t_{n-3}+t_{n-2}+t_{n-1}$, and
-subtracting gives $v(a_{n+4})=t_{n+1}+t_{n+2}+t_{n+3}$.
-
-\smallskip
-\emph{(III).}  Suppose $t_{n+4}>0$.  By \eqref{eq:vb} and (I),
-$v(b_{n+4})=t_{n+4}+t_n\ge t_{n+4}>0$, so $p\mid b_{n+4}$, i.e.
-$a_{n+4}\equiv-1\pmod p$.  Since $a_{n+4}=b_{n+4}-1$ with
-$v(b_{n+4})>0=v(1)$, the ultrametric inequality is an equality and
-$v(a_{n+4})=0$.  By (II), $t_{n+1}+t_{n+2}+t_{n+3}=0$, and each summand is
-$\ge0$ by (I), so all three vanish.
-
-\smallskip
-\emph{(I).}  We must show $v(b_{n+4})\ge t_n$, i.e.\ $t_{n+4}\ge0$.
-If $t_n=0$ this is immediate: $b_{n+4}=1+a_{n+4}$ with $v(a_{n+4})\ge0$
-(by (II) and (I) at smaller indices), so $v(b_{n+4})\ge\min(0,v(a_{n+4}))=0$.
-
-Now suppose $T:=t_n>0$.  Applying (III) at index $n-4$ gives
-$t_{n-3}=t_{n-2}=t_{n-1}=0$, whence by (II)
-\[
-v(a_n)=t_{n-3}+t_{n-2}+t_{n-1}=0 ,
-\]
-so $a_n$ is a $p$-adic unit.  We bound the four summands of the identity
-\eqref{eq:star}, rewritten (using $b_j=a_j+1$) as
-\begin{equation}
-b_{n+4}\,a_n
-=\underbrace{b_n}_{\text{(1)}}
-+\underbrace{a_{n+3}b_{n+2}b_{n+1}}_{\text{(2)}}
-+\underbrace{a_{n+2}b_{n+1}}_{\text{(3)}}
-+\underbrace{a_{n+1}}_{\text{(4)}} .
-\label{eq:star2}
-\end{equation}
-Each has valuation $\ge T$:
-\begin{itemize}
-\item[(1)] $v(b_n)=t_n+t_{n-4}=T+t_{n-4}\ge T$ by \eqref{eq:vb} and (I);
-\item[(4)] $v(a_{n+1})=t_{n-2}+t_{n-1}+t_n=T$ by (II) and the vanishing above;
-\item[(3)] $v(a_{n+2})=t_{n-1}+t_n+t_{n+1}\ge T$ and $v(b_{n+1})\ge0$;
-\item[(2)] $v(a_{n+3})=t_n+t_{n+1}+t_{n+2}\ge T$ and $v(b_{n+2}),v(b_{n+1})\ge0$.
-\end{itemize}
-(For (3),(4) note $v(a_{n+1}),v(a_{n+2})\ge0$ and the displayed sums are
-$\ge T$ because $t_n=T$ and the other atoms are $\ge0$; the values used for
-$v(a_{n+1})$, $v(a_{n+2})$, $v(a_{n+3})$ come from (II).)  By the ultrametric
-inequality the right side of \eqref{eq:star2} has valuation $\ge T$, so
-$v(b_{n+4}\,a_n)\ge T$.  As $v(a_n)=0$, we conclude $v(b_{n+4})\ge T=t_n$,
-i.e.\ $t_{n+4}\ge0$.  This closes the induction.
 \end{proof}
 
 \section{The prime $2$: a 44-step return}\label{sec:two}
@@ -224,91 +254,95 @@ w_{n+4}+w_n=t_{n+1}+t_{n+2}+t_{n+3}\qquad(n\ge0).
 \label{eq:balance}
 \end{equation}
 
-\begin{lemma}[$44$-step return lemma]\label{lem:return}
-Let $A_0,A_1,A_2,A_3\in 1+16\Ztwo$ and extend $(A_n)$ by
+\begin{lemma}[$44$-step rational return lemma]\label{lem:return}
+Let
+\[
+A_0,A_1,A_2,A_3\in\Q\cap(1+16\Ztwo)
+\]
+and extend the rational sequence $(A_n)$ by
 \[
 A_{n+4}A_n=(1+A_{n+1})(1+A_{n+2})(1+A_{n+3}).
 \]
-Then $A_0,\dots,A_{47}$ are all defined and units of $\Qtwo^\times$, with
+Then $A_0,\dots,A_{47}$ are all defined and nonzero, with
 \[
 \vt(A_n)=w_n\qquad(0\le n\le43),
 \]
 and moreover
 \[
-A_{44},A_{45},A_{46},A_{47}\in 1+16\Ztwo .
+A_{44},A_{45},A_{46},A_{47}\in\Q\cap(1+16\Ztwo).
 \]
 \end{lemma}
 
-The point of the lemma is that the hypothesis and the last conclusion have
-the \emph{same} form: a window of four elements of $1+16\Ztwo$ is mapped, after
-$44$ steps, to another such window.  Thus the lemma may be iterated.
+The restriction to rational points is deliberate: this is the domain quantified
+over in the Lean development.  Equivalently, write
+$A_i=1+16c_i$ with $c_i\in\Q$ and either $c_i=0$ or $\vt(c_i)\ge0$.
+The recurrence stays in $\Q$.  The last conclusion therefore has exactly the
+same form as the hypothesis, so the lemma can be iterated in blocks of $44$.
 
 \begin{proof}
-The statement is uniform in the tube $1+16\Ztwo$, so we prove it once for the
-generic point.  Work in the power-series ring
-$R=\Ztwo[[z_0,z_1,z_2,z_3]]$ and set
+The normalized recurrence motivates the finite computation.  Put
+$S_n=A_n/2^{w_n}$ and
 \[
-A_i=1+16\,z_i\qquad(0\le i\le3),
+H_n:=\frac{1+A_n}{2^{t_n}}.
 \]
-so that specialising $z_0,\dots,z_3\in\Ztwo$ recovers an arbitrary admissible
-window.  We claim each $A_n$ factors as
+Whenever the displayed divisions have the predicted valuations, the balance
+law \eqref{eq:balance} turns the original recurrence into
 \begin{equation}
-A_n=2^{w_n}U_n,\qquad U_n\in R^\times ,
-\label{eq:factor}
-\end{equation}
-with the units satisfying, by \eqref{eq:balance},
-\begin{equation}
-U_{n+4}=U_n^{-1}\,H_{n+1}H_{n+2}H_{n+3},
-\qquad
-H_n:=\frac{1+2^{w_n}U_n}{2^{t_n}} .
+S_{n+4}=S_n^{-1}H_{n+1}H_{n+2}H_{n+3}.
 \label{eq:unit}
 \end{equation}
-Indeed, substituting \eqref{eq:factor} into the recurrence and dividing by
-$2^{w_{n+4}+w_n}=2^{t_{n+1}+t_{n+2}+t_{n+3}}$ yields \eqref{eq:unit}, provided
-each $H_n$ is a well-defined unit and each $U_n$ is invertible.  So the lemma
-reduces to the finite assertion that, for $0\le n\le47$,
-\begin{enumerate}
-\item[(a)] the division by $2^{t_n}$ defining $H_n$ is exact and $H_n\in R^\times$;
-\item[(b)] $U_n\in R^\times$ (so $U_n^{-1}$ exists);
-\item[(c)] at every phase with $w_n=0$ one has $\vt\!\bigl(1+U_n(z)\bigr)=t_n$
-      for all $z\in\Ztwo^4$;
-\item[(d)] $U_{44},U_{45},U_{46},U_{47}\equiv1\pmod{16R}$.
-\end{enumerate}
-Here $U_n(z)$ denotes the specialisation and $U_n(0)$ its constant term.
-
-\emph{This is a finite, coefficientwise computation over the finite rings
-$\Z/2^m\Z$.}  One tracks each $U_n$ as a polynomial in $z_0,\dots,z_3$ with
-coefficients known modulo $2^{p_n}$ (a running precision), starting from
-$U_i=1+16z_i$ at precision $p_i=34$.  The four ring operations needed for
-\eqref{eq:unit}---multiplication, addition, division by a power of $2$
-(exact, hence precision-preserving up to the shift), and inversion of a
-$1\bmod2$ series by Newton iteration---are all exact modulo $2^{p}$.  Writing
-$U_n=\sum_\alpha u_{n,\alpha}z^\alpha$ and
-$\mu_n=\min_{\alpha\neq0}\vt(u_{n,\alpha})$, condition (c) is verified by the
-two facts
+The formal proof does not construct infinite series in
+$\Ztwo[[z_0,z_1,z_2,z_3]]$.  Instead, for each $0\le n\le47$ the finite checker
+constructs an integer polynomial $P_n(z_0,z_1,z_2,z_3)$ and a precision $p_n$.
+The soundness invariant, called \texttt{Rep} in Lean, is
 \begin{equation}
-\vt\!\bigl(1+U_n(0)\bigr)=t_n
-\qquad\text{and}\qquad
-\mu_n\ge t_n+1
+A_n\ne0,\qquad
+\vt(A_n)=w_n,\qquad
+\vt\!\left(\frac{A_n}{2^{w_n}}-P_n(c)\right)\ge p_n.
+\label{eq:rep}
+\end{equation}
+Here exact equality in the last comparison is allowed, as usual for a
+$2$-adic approximation.  Thus the polynomial jet represents the actual
+normalized rational value uniformly for every rational tube parameter $c$.
+
+The initial jets are $P_i=1+16z_i$ at precision $p_i=34$.  At each step the
+checker performs finite polynomial addition and multiplication, exact division
+by the required power of $2$, and Newton inversion modulo $2^{p_n}$.  It also
+checks the valuation-reading conditions.  When $w_n=0$, these are
+\begin{equation}
+\vt\!\bigl(1+P_n(0)\bigr)=t_n,
+\qquad
+\mu_n:=\min_{\alpha\ne0}\vt([z^\alpha]P_n)\ge t_n+1.
 \label{eq:read}
 \end{equation}
-at each phase with $w_n=0$: the first fixes the constant term's valuation,
-the second forces every nonconstant coefficient of $1+U_n$ to lie deeper, so
-that $\vt(1+U_n(z))=t_n$ for \emph{all} $z\in\Ztwo^4$.  At a phase with
-$w_n>0$ the element $1+2^{w_n}U_n$ is a unit and $t_n=0$.  Finally (d) is the
-statement $U_n(0)\equiv1\pmod{16}$ with $\mu_n\ge4$ for $n=44,\dots,47$.
+They imply $\vt(1+A_n)=t_n$ for every admissible rational $c$.  When $w_n>0$,
+the checker verifies $t_n=0$, and $1+A_n$ is a $2$-adic unit.  Finally, at
+$n=44,45,46,47$ it checks
+\[
+P_n(0)\equiv1\pmod{16},\qquad \mu_n\ge4,
+\]
+together with $p_n\ge4$.
 
-The verification is elementary but too large to reproduce by hand; carrying
-it out (by exact integer arithmetic, and independently machine-checked in a
-proof assistant) confirms (a)--(d).  For orientation, the decisive
-phases---those with $w_n=0$---give the following constant terms and depths,
-from which \eqref{eq:read} is read off:
+The finite Boolean computation alone is not the proof of the rational
+statement.  Its soundness bridge is the Lean lemma \texttt{step\_prep}: assuming
+\eqref{eq:rep} at $n,n+1,n+2,n+3$, it proves \eqref{eq:rep} at $n+4$ using
+\eqref{eq:unit} and the checked polynomial operations.  Starting with the four
+initial jets, the lemma \texttt{reps} applies this step through index $47$.
+Consequently the first two assertions of \eqref{eq:rep} give nonvanishing and
+the valuation word over the first block.  At the four return indices, the last
+assertion of \eqref{eq:rep}, the congruence and depth checks above, and
+$p_n\ge4$ show $A_n\equiv1\pmod{16\Ztwo}$.  This is formalized by
+\texttt{return\_tube}; \texttt{seq\_offset} identifies the sequence generated
+by the returned window with the original sequence shifted by $44$.
+
+For orientation, the decisive phases with $w_n=0$ give the following checked
+constant terms and nonconstant depths:
 \[
 \begin{array}{c|rrrrrrrrrrrr}
 n & 0&1&2&3&7&11&12&13&14&18&22&23\\
 \midrule
 t_n & 1&1&1&1&5&2&1&1&1&5&2&1\\
-U_n(0)\bmod64 & 1&1&1&1&31&43&9&21&9&31&11&45\\
+P_n(0)\bmod64 & 1&1&1&1&31&43&9&21&9&31&11&45\\
 \mu_n & 4&4&4&4&6&3&4&4&3&7&4&4
 \end{array}
 \]
@@ -317,58 +351,84 @@ U_n(0)\bmod64 & 1&1&1&1&31&43&9&21&9&31&11&45\\
 n & 24&25&29&33&34&35&36&40&44&45&46&47\\
 \midrule
 t_n & 1&2&5&1&1&1&2&5&1&1&1&1\\
-U_n(0)\bmod64 & 61&43&31&17&21&41&3&31&17&49&17&49\\
+P_n(0)\bmod64 & 61&43&31&17&21&41&3&31&17&49&17&49\\
 \mu_n & 4&4&7&3&4&4&3&6&4&4&4&4
 \end{array}
 \]
-Starting from precision $34$, the running precisions at
-$U_{44},\dots,U_{47}$ are $9,8,7,6$, comfortably above the $4$ bits the
-return congruence (d) requires.  This proves the lemma.
+The running precisions at $P_{44},P_{45},P_{46},P_{47}$ are respectively
+$9,8,7,6$, above the four bits required for the return congruence.  The checker
+starts from precision $34$ and is discharged in Lean by \texttt{native\_decide}.
 \end{proof}
 
 \begin{corollary}\label{cor:two}
-$\vt(a_n)=w_n\ge0$ for all $n\ge0$.
+For every $n\ge0$,
+\[
+\vt(a_n)=w_n=w_{n\bmod44}\ge0.
+\]
 \end{corollary}
 \begin{proof}
-The initial window $a_0=a_1=a_2=a_3=1$ lies in $1+16\Ztwo$, and $(a_n)$ obeys
-the recurrence of Lemma~\ref{lem:return} (indeed \eqref{eq:rec} is exactly it,
-with $A_n=a_n$).  The lemma gives $\vt(a_n)=w_n$ for $0\le n\le43$ and places
-the window $(a_{44},a_{45},a_{46},a_{47})$ back in $1+16\Ztwo$.  Applying the
-lemma again from index $44$, then $88$, and so on, yields $\vt(a_n)=w_{n\bmod44}$
-for every $n$.  As all $w_n\ge0$, the claim follows.
+The initial rational window $a_0=a_1=a_2=a_3=1$ lies in
+$\Q\cap(1+16\Ztwo)$, and $(a_n)$ obeys the recurrence of
+Lemma~\ref{lem:return}.  That lemma gives the valuation word for the first
+block and returns $(a_{44},a_{45},a_{46},a_{47})$ to the same rational tube.
+The shifted recurrence is the same recurrence, so iteration from indices
+$44,88,\dots$ proves the formula.  Every entry of $w$ is nonnegative.
 \end{proof}
+
+The supplied Lean file packages the block induction needed by the integrality
+theorem as \texttt{Return.val\_nonneg}, and exposes
+$\vt(a_n)\ge0$ as \texttt{val\_nonneg\_a}.  It does not package the exact
+all-$n$ equality of Corollary~\ref{cor:two} as a separate named theorem.  That
+equality is the paper-level consequence of the same proved first-block
+invariant \texttt{reps}, return lemma \texttt{return\_tube}, and shift lemma
+\texttt{seq\_offset}.
 
 \section{Conclusion}\label{sec:conclusion}
 
-By Corollary~\ref{cor:odd}, $a_n\in\Z[\tfrac12]$: no odd prime divides its
-denominator.  By Corollary~\ref{cor:two}, $\vt(a_n)\ge0$: no power of $2$
-divides its denominator either.  Hence $a_n$ has denominator $1$, i.e.\
-$a_n\in\Z$, proving Theorem~\ref{thm:main}. \qed
+The formal dependency chain for integrality is
+\[
+\begin{gathered}
+\text{odd-prime valuation induction}\\
+{}+\ \text{$44$-step rational $2$-adic return}\\
+{}+\ \text{the valuation criterion for rational integers}\\[2pt]
+\Longrightarrow\ \text{integrality}.
+\end{gathered}
+\]
+Neither the cluster embedding nor the Laurent phenomenon is used in this
+chain.
 
-\begin{remark}[The cluster embedding]
-The auxiliary sequence in Section~\ref{sec:odd} can be replaced by a
-structural observation.  Define $(x_n)$ by
+\begin{proof}[Proof of Theorem~\ref{thm:main}]
+By Corollary~\ref{cor:odd}, $a_n\in\Z[\tfrac12]$: no odd prime divides its
+denominator.  By the machine-checked nonnegativity consequence described after
+Corollary~\ref{cor:two}, $\vt(a_n)\ge0$, so no power of $2$ divides its
+denominator either.  Hence $a_n$ has denominator $1$, and therefore
+$a_n\in\Z$.
+\end{proof}
+
+\begin{remark}[Optional context: the cluster embedding]
+The Lean file proves the following embedding, but the final integrality theorem
+does not use it.  Define $(x_n)$ by
 \[
 x_0=4,\ x_1=\tfrac12,\ x_2=4,\ x_3=\tfrac12,\qquad
 x_{n+4}\,x_n=1+x_{n+1}x_{n+2}x_{n+3}.
 \]
-Then $x_{n+4}x_n=1+x_{n+1}x_{n+2}x_{n+3}$ shows $(a_n')$ with
-$a_n':=x_{n+1}x_{n+2}x_{n+3}$ satisfies exactly \eqref{eq:rec} with the same
-initial values, so $a_n=x_{n+1}x_{n+2}x_{n+3}$.  This recurrence is a
-period-one cluster recurrence (mutation at one vertex of the totally-ordered
-$4$-vertex quiver, which is recovered after a cyclic relabelling); the
-Laurent phenomenon then gives
-$x_n\in\Z[x_0^{\pm1},\dots,x_3^{\pm1}]=\Z[\tfrac12]$, hence
-$a_n\in\Z[\tfrac12]$.  This reproves Corollary~\ref{cor:odd} and explains the
-provenance of the problem, but is not needed for the argument above.
+Then $(a_n')$ with $a_n':=x_{n+1}x_{n+2}x_{n+3}$ satisfies
+\eqref{eq:rec} with the same four initial values, and the formal lemma
+\texttt{cluster} proves
+$a_n=x_{n+1}x_{n+2}x_{n+3}$.
+
+The further identification of the $x$-recurrence as a period-one cluster
+recurrence and the invocation of the Laurent phenomenon are external context,
+not results proved in the supplied Lean file.  They give another mathematical
+route to $x_n\in\Z[\tfrac12]$ and hence $a_n\in\Z[\tfrac12]$, but they are not
+part of the proof dependency chain above.
 \end{remark}
 
 \begin{remark}
-The valuation sequence $\vt(a_n)$ is exactly $44$-periodic
-(Corollary~\ref{cor:two}); no shorter period occurs (for instance
-$\vt(a_{15})=3$ while $\vt(a_{26})=4$).  This is why a return lemma over a
-full period, rather than a single-step congruence, is required at the
-prime~$2$.
+Corollary~\ref{cor:two} shows that the valuation sequence is $44$-periodic.
+A direct finite comparison of the displayed word shows that its least period is
+$44$; this minimality observation is not separately formalized in the supplied
+Lean file and is not needed for integrality.
 \end{remark}
 
 \end{document}
