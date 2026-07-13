@@ -11,30 +11,40 @@ a(n) = (a(n-1) + 1)(a(n-2) + 1)(a(n-3) + 1) / a(n-4)
 
 consists only of integers.
 
+The proof shows that `a(n)` has nonnegative `p`-adic valuation at every prime
+`p`; the cases of odd `p` and of `p = 2` are handled by different methods.
+
+* **Odd primes.** With `b(n) = a(n) + 1` and the identity
+  `b(n+4)·a(n) = a(n) + b(n+1)b(n+2)b(n+3)`, a short valuation induction shows
+  divisibility is confined to isolated bursts of terms, giving `a(n) ∈ ℤ[1/2]`.
+* **The prime 2.** Over the tube `1 + 16·ℤ₂`, writing `A(n) = 2^{w(n)}·U(n)`
+  with `U(n)` a unit turns the recurrence into a unit recurrence with explicit
+  `44`-periodic words `w`, `t`. A finite computation in `ℤ₂[[z₀,…,z₃]]`
+  (coefficients mod `2^m`) verifies over one period that the valuation follows
+  the nonnegative word `w` and that the window returns to `1 + 16·ℤ₂` after
+  `44` steps, so it iterates. This finite check is decided by `native_decide`.
+
+This realizes, fully explicitly, the strategy of mercio's answer to the
+question above: the cluster embedding `a(n) = x(n+1)x(n+2)x(n+3)` into a
+period-one cluster recurrence, together with a `2`-adic neighbourhood of
+`(1,1,1,1)` that the recurrence returns to.
+
 ## Contents
 
-* [proof.pdf](proof.pdf) ([proof.tex](proof.tex)) — the mathematical
-  exposition of the proof.
-  For odd primes, a short valuation induction shows divisibility is confined
-  to bursts of three consecutive terms. At the prime 2, the 2-adic valuation
-  of `a(n)` follows an explicit word of period 44, proven by a certified
-  computation: an induction over 11-step segments of the orbit, with the
-  deviation of each period confined to an explicit lattice tube and the
-  required 2-adic estimates established by certified polynomial (jet)
-  approximations of the segment maps.
 * [Proof.lean](Proof.lean) — the complete, self-contained Lean 4 / Mathlib
-  formalization (definitions, soundness lemmas, the full certificate, and
-  the assembly). Final statement:
+  formalization (~1800 lines). Final statement:
 
   ```lean
-  theorem a276175_integrality (n : ℕ) : ∃ z : ℤ, a n = z
+  theorem A276175_integrality (n : ℕ) : ∃ z : ℤ, A276175Cluster.a n = z
   ```
 
-  where `a` is defined by nothing but the recurrence above. No `sorry`;
-  depends only on the three standard axioms
-  `[propext, Classical.choice, Quot.sound]`.
-* [verification.py](verification.py) — independent sanity check by exact
-  rational arithmetic for `n ≤ 26`.
+  where `A276175Cluster.a` is defined by nothing but the recurrence above. No
+  `sorry`. Depends on the three standard axioms
+  `[propext, Classical.choice, Quot.sound]` together with the `native_decide`
+  reduction axiom (`Lean.ofReduceBool`), which discharges the finite `2`-adic
+  computation.
+* [proof.pdf](proof.pdf) ([proof.tex](proof.tex)) — the mathematical
+  exposition of the proof.
 
 ## Verify
 
@@ -43,6 +53,4 @@ lake exe cache get
 lake build
 ```
 
-Builds in a few minutes (the file is large — most of it is machine-generated
-certificate data: orbit residues, tube generators, jets, inversion
-witnesses — but every step is checked by the Lean kernel).
+Builds in a few minutes; every step is checked by the Lean kernel.
